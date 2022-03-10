@@ -4,23 +4,34 @@ import { of } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
 
 import { authState } from 'rxfire/auth';
+import {
+	getFirestore,
+	collection,
+	query,
+	where,
+	addDoc,
+	doc,
+	deleteDoc
+} from '@firebase/firestore';
+import { getAuth } from '@firebase/auth';
 
-export const collectionListener = (firebaseApp) => {
-	collectionData(firebaseApp.firestore().collection('publiclist'), { idField: 'uid' }).subscribe(
+export const collectionListener = () => {
+	collectionData(collection(getFirestore(), 'publiclist'), { idField: 'uid' }).subscribe(
 		async (data) => {
 			publicStore.set(data);
 			localStorage.setItem('publiclist', JSON.stringify(data));
 		}
 	);
 
-	authState(firebaseApp.auth())
+	authState(getAuth())
 		.pipe(
 			switchMap((user) => {
+				const db = getFirestore();
 				if (user) {
-					return collectionData(
-						firebaseApp.firestore().collection('privilagedlist').where('user', '==', user.uid),
-						{ idField: 'uid' }
-					);
+					const q = query(collection(db, 'privilagedlist'), where('user', '==', user.uid));
+					return collectionData(q, {
+						idField: 'uid'
+					});
 				} else {
 					return of([]);
 				}
@@ -40,17 +51,17 @@ export const collectionListener = (firebaseApp) => {
 
 export const addItemToCollection = (firebaseApp) => (collectionName) => {
 	firebaseApp.subscribe(async (app) => {
-		const user = app.auth().currentUser;
-		const string = `${collectionName} item (sapper) ${(Math.random() * 101) | 0}`;
-		const collection = app.firestore().collection(collectionName);
+		const user = getAuth().currentUser;
+		const string = `${collectionName} item (sveltekit) ${(Math.random() * 101) | 0}`;
+		const coll = collection(getFirestore(), collectionName);
 		if (collectionName == 'privilagedlist') {
 			user &&
-				collection.add({
+				addDoc(coll, {
 					name: string,
 					user: user.uid
 				});
 		} else {
-			collection.add({
+			addDoc(coll, {
 				name: string,
 				user: (user == null ? undefined : user.uid) || 'anon'
 			});
@@ -60,21 +71,22 @@ export const addItemToCollection = (firebaseApp) => (collectionName) => {
 
 export const removeItemFromCollection = (firebaseApp) => (collectionName) => {
 	firebaseApp.subscribe(async (app) => {
-		const user = app.auth().currentUser;
-		//const string = `${collectionName} item (sapper) ${(Math.random() * 101) | 0}`;
-		const collection = app.firestore().collection(collectionName);
+		const user = getAuth().currentUser;
+		//const string = `${collectionName} item (sveltekit) ${(Math.random() * 101) | 0}`;
+		const coll = collection(getFirestore(), collectionName);
 
-		if (collectionName == 'publiclist' || user) {
-			collection
-				//.orderBy("name")
-				.orderBy(app.firestore.FieldPath.documentId())
-				.limit(1)
-				.get()
-				.then(function (querySnapshot) {
-					querySnapshot.forEach(function (doc) {
-						doc.ref.delete();
-					});
-				});
-		}
+		//if (collectionName == 'publiclist' || user) {
+		//	deleteDoc(doc(db, collectionName));
+		//	coll
+		//		//.orderBy("name")
+		//		.orderBy(app.firestore.FieldPath.documentId())
+		//		.limit(1)
+		//		.get()
+		//		.then(function (querySnapshot) {
+		//			querySnapshot.forEach(function (doc) {
+		//				doc.ref.delete();
+		//			});
+		//		});
+		//}
 	});
 };

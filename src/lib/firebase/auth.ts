@@ -1,8 +1,10 @@
 import { authState } from 'rxfire/auth';
 import { authStore } from '$lib/stores/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from '@firebase/auth';
+import type { FirebaseApp } from 'firebase/app';
 
-export const authListener = (firebaseApp) => {
-	authState(firebaseApp.auth()).subscribe(async (user) => {
+export const authListener = () => {
+	authState(getAuth()).subscribe(async (user) => {
 		if (user) {
 			const token = await user.getIdToken(true);
 			//const idTokenResult = await user.getIdTokenResult();
@@ -30,12 +32,13 @@ export const signInWithFacebook =
 export const signInWithGoogle =
 	(firebaseApp) =>
 	({ redirect = false }) => {
-		firebaseApp.subscribe(async (app) => {
-			const authProvider = new app.auth.GoogleAuthProvider();
+		firebaseApp.subscribe(async (app: FirebaseApp) => {
+			const auth = getAuth();
+			const authProvider = new GoogleAuthProvider();
 			try {
 				redirect === true
-					? await app.auth().signInWithRedirect(authProvider)
-					: await app.auth().signInWithPopup(authProvider);
+					? await signInWithRedirect(auth, authProvider)
+					: await signInWithPopup(auth, authProvider);
 			} catch (error) {
 				/* eslint-disable no-console */
 				console.log(error);
@@ -45,8 +48,9 @@ export const signInWithGoogle =
 
 export const signOut = (firebaseApp) => () => {
 	firebaseApp.subscribe(async (app) => {
+		const auth = getAuth();
 		try {
-			await app.auth().signOut();
+			await auth.signOut();
 			authStore.set({ status: 'out', user: null, token: null });
 			localStorage.removeItem('token');
 		} catch (error) {

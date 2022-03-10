@@ -2,7 +2,7 @@ import { firebaseApp$ } from './init';
 
 /////////////////////////
 //
-// auth.js
+// auth.ts
 import {
 	signInWithGoogle as _signInWithGoogle,
 	signInWithFacebook as _signInWithFacebook,
@@ -15,7 +15,7 @@ export const signOut = _signOut(firebaseApp$);
 
 /////////////////////////
 //
-// collection.js
+// collection.ts
 import { addItemToCollection as _addItemToCollection } from './collection';
 export const addItemToCollection = _addItemToCollection(firebaseApp$);
 

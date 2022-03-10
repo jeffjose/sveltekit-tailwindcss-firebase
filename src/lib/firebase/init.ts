@@ -14,8 +14,7 @@ export function lazyLoad() {
 	return forkJoin([firebase$, auth$, firestore$]).pipe(
 		// apply transform to array emitted from forkJoin to return Firebase instance
 		map(([firebase$]) => {
-			const firebase = firebase$.default;
-			return { firebase };
+			return { firebase: firebase$ };
 		})
 	);
 }
@@ -30,8 +29,8 @@ if (typeof window !== 'undefined') {
 			tap((load) => {
 				const { firebase } = load;
 				const app = firebase.initializeApp(config);
-				authListener(app);
-				collectionListener(app);
+				authListener();
+				collectionListener();
 			})
 		)
 		.subscribe((load) => {
